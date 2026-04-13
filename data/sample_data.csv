@@ -1,0 +1,61 @@
+state,district,village,household_id,income,issue_type,household_size,land_owned_acres
+Rajasthan,Jaipur,Amer,1,45000,Water Scarcity,4,2.5
+Rajasthan,Jaipur,Amer,2,32000,Unemployment,3,1.0
+Rajasthan,Jaipur,Amer,3,67000,Water Scarcity,5,3.2
+Rajasthan,Jaipur,Amer,4,28000,Poor Roads,4,0.5
+Rajasthan,Jaipur,Amer,5,51000,Unemployment,6,2.0
+Rajasthan,Jaipur,Sanganer,6,39000,Water Scarcity,3,1.5
+Rajasthan,Jaipur,Sanganer,7,72000,Poor Roads,4,4.0
+Rajasthan,Jaipur,Sanganer,8,25000,Unemployment,5,0.8
+Rajasthan,Jaipur,Sanganer,9,44000,Water Scarcity,3,1.2
+Rajasthan,Jaipur,Sanganer,10,58000,Healthcare,4,2.8
+Rajasthan,Jodhpur,Mandore,11,36000,Water Scarcity,4,1.8
+Rajasthan,Jodhpur,Mandore,12,49000,Unemployment,5,2.2
+Rajasthan,Jodhpur,Mandore,13,61000,Poor Roads,3,3.5
+Rajasthan,Jodhpur,Mandore,14,27000,Healthcare,6,0.6
+Rajasthan,Jodhpur,Mandore,15,55000,Water Scarcity,4,2.0
+Rajasthan,Jodhpur,Luni,16,42000,Unemployment,3,1.4
+Rajasthan,Jodhpur,Luni,17,33000,Water Scarcity,5,0.9
+Rajasthan,Jodhpur,Luni,18,68000,Poor Roads,4,4.2
+Rajasthan,Jodhpur,Luni,19,29000,Healthcare,4,0.7
+Rajasthan,Jodhpur,Luni,20,53000,Unemployment,3,2.1
+Maharashtra,Pune,Khed,21,78000,Unemployment,4,3.0
+Maharashtra,Pune,Khed,22,45000,Water Scarcity,5,1.5
+Maharashtra,Pune,Khed,23,92000,Poor Roads,3,5.0
+Maharashtra,Pune,Khed,24,38000,Healthcare,4,1.0
+Maharashtra,Pune,Khed,25,61000,Unemployment,6,2.5
+Maharashtra,Pune,Maval,26,55000,Water Scarcity,4,2.0
+Maharashtra,Pune,Maval,27,83000,Poor Roads,3,4.5
+Maharashtra,Pune,Maval,28,41000,Healthcare,5,1.2
+Maharashtra,Pune,Maval,29,69000,Unemployment,4,3.2
+Maharashtra,Pune,Maval,30,47000,Water Scarcity,3,1.8
+Maharashtra,Nashik,Igatpuri,31,52000,Water Scarcity,5,2.3
+Maharashtra,Nashik,Igatpuri,32,37000,Unemployment,4,1.1
+Maharashtra,Nashik,Igatpuri,33,74000,Poor Roads,3,3.8
+Maharashtra,Nashik,Igatpuri,34,29000,Healthcare,6,0.5
+Maharashtra,Nashik,Igatpuri,35,63000,Water Scarcity,4,2.7
+Maharashtra,Nashik,Sinnar,36,48000,Unemployment,3,1.6
+Maharashtra,Nashik,Sinnar,37,35000,Water Scarcity,5,0.9
+Maharashtra,Nashik,Sinnar,38,71000,Poor Roads,4,4.1
+Maharashtra,Nashik,Sinnar,39,26000,Healthcare,4,0.4
+Maharashtra,Nashik,Sinnar,40,57000,Unemployment,3,2.4
+Uttar Pradesh,Lucknow,Malihabad,41,31000,Water Scarcity,5,1.3
+Uttar Pradesh,Lucknow,Malihabad,42,44000,Unemployment,4,1.9
+Uttar Pradesh,Lucknow,Malihabad,43,58000,Poor Roads,3,2.8
+Uttar Pradesh,Lucknow,Malihabad,44,23000,Healthcare,6,0.3
+Uttar Pradesh,Lucknow,Malihabad,45,49000,Water Scarcity,4,1.7
+Uttar Pradesh,Lucknow,Bakshi Ka Talab,46,36000,Unemployment,3,1.2
+Uttar Pradesh,Lucknow,Bakshi Ka Talab,47,27000,Water Scarcity,5,0.6
+Uttar Pradesh,Lucknow,Bakshi Ka Talab,48,62000,Poor Roads,4,3.3
+Uttar Pradesh,Lucknow,Bakshi Ka Talab,49,41000,Healthcare,4,1.5
+Uttar Pradesh,Lucknow,Bakshi Ka Talab,50,53000,Unemployment,3,2.0
+Uttar Pradesh,Agra,Fatehabad,51,34000,Water Scarcity,5,1.1
+Uttar Pradesh,Agra,Fatehabad,52,47000,Unemployment,4,1.8
+Uttar Pradesh,Agra,Fatehabad,53,59000,Poor Roads,3,2.6
+Uttar Pradesh,Agra,Fatehabad,54,25000,Healthcare,6,0.4
+Uttar Pradesh,Agra,Fatehabad,55,43000,Water Scarcity,4,1.4
+Uttar Pradesh,Agra,Kiraoli,56,38000,Unemployment,3,1.3
+Uttar Pradesh,Agra,Kiraoli,57,29000,Water Scarcity,5,0.7
+Uttar Pradesh,Agra,Kiraoli,58,65000,Poor Roads,4,3.6
+Uttar Pradesh,Agra,Kiraoli,59,32000,Healthcare,4,1.0
+Uttar Pradesh,Agra,Kiraoli,60,51000,Unemployment,3,2.2
