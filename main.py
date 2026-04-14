@@ -721,7 +721,6 @@ def build_document(state, district, village, scope, filtered, ml, charts, photos
             ("Families", f"{ml['families_covered']:,}")])
     _kvrow([("Dominant Vertical", ml["top_vertical"]),
             ("Female Share", f"{ml['female_pct']}%"),
-            ("Avg Programme Age", f"{ml['avg_age_yrs']} yrs"),
             ("Matrusansthans", ml["matrusansthan_count"])])
 
     # Qualitative highlights — Reasons, Impact, Achievements
@@ -853,276 +852,263 @@ def build_document(state, district, village, scope, filtered, ml, charts, photos
 
 def build_pdf(state, district, village, scope, filtered, ml, charts, photos=None) -> str:
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import inch
     from reportlab.lib import colors
     from reportlab.platypus import (
         SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
         Image, PageBreak, HRFlowable,
     )
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.lib.enums import TA_CENTER
 
     scope_line = _clean(village or (f"{district}, {state}" if district else state))
+    LOGO_PATH  = os.path.join(os.path.dirname(__file__), "logo_dark.png")
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
 
     doc = SimpleDocTemplate(
         tmp.name, pagesize=A4,
         leftMargin=0.75*inch, rightMargin=0.75*inch,
-        topMargin=0.75*inch, bottomMargin=0.75*inch,
+        topMargin=0.6*inch,   bottomMargin=0.6*inch,
     )
-
-    W = A4[0] - 1.5*inch  # usable width
-
-    # Styles
-    base = getSampleStyleSheet()
+    W    = A4[0] - 1.5*inch
     BLUE = colors.HexColor("#1f497d")
 
     def _s(name, **kw):
         kw.setdefault("fontName", "Helvetica")
         return ParagraphStyle(name, **kw)
 
-    normal  = _s("pNormal",  fontSize=9,  leading=14, spaceAfter=4)
-    bold_s  = _s("pBold",    fontSize=9,  leading=14, spaceAfter=4, fontName="Helvetica-Bold")
-    h1      = _s("pH1",      fontSize=14, leading=18, spaceAfter=6, spaceBefore=10,
+    normal  = _s("pN",  fontSize=8.5, leading=12, spaceAfter=2)
+    italic  = _s("pI",  fontSize=8.5, leading=12, spaceAfter=2, fontName="Helvetica-Oblique")
+    kv_s    = _s("pKV", fontSize=8.5, leading=12, spaceAfter=2)
+    sec_s   = _s("pSec",fontSize=10,  leading=13, spaceAfter=3, spaceBefore=5,
                  fontName="Helvetica-Bold", textColor=BLUE)
-    h2      = _s("pH2",      fontSize=11, leading=15, spaceAfter=4, spaceBefore=8,
-                 fontName="Helvetica-Bold", textColor=BLUE)
-    title_s = _s("pTitle",   fontSize=20, leading=26, spaceAfter=4,
+    title_s = _s("pTi", fontSize=22,  leading=28, spaceAfter=4,
                  fontName="Helvetica-Bold", textColor=BLUE, alignment=TA_CENTER)
-    sub_s   = _s("pSub",     fontSize=9,  leading=13, spaceAfter=2, alignment=TA_CENTER)
-    caption = _s("pCaption", fontSize=8,  leading=11, spaceAfter=2, textColor=colors.grey)
+    sub_s   = _s("pSu", fontSize=14,  leading=18, spaceAfter=4,
+                 fontName="Helvetica-Bold", textColor=BLUE, alignment=TA_CENTER)
+    meta_s  = _s("pMe", fontSize=9,   leading=13, spaceAfter=2, alignment=TA_CENTER)
+    cap_s   = _s("pCa", fontSize=7,   leading=10, spaceAfter=2,
+                 textColor=colors.grey, alignment=TA_CENTER)
 
-    def _tbl_pdf(headers, rows, col_widths=None):
-        data = [headers] + [list(r) for r in rows]
-        data = [[str(c) for c in row] for row in data]
-        if col_widths is None:
-            col_widths = [W / len(headers)] * len(headers)
-        t = Table(data, colWidths=col_widths, repeatRows=1)
+    def _sec_elem(label):
+        return [
+            HRFlowable(width=W, thickness=0.5, color=BLUE, spaceAfter=2, spaceBefore=5),
+            Paragraph(label, sec_s),
+        ]
+
+    def _kvrow_elem(pairs):
+        parts = []
+        for i, (k, v) in enumerate(pairs):
+            if i:
+                parts.append("   ")
+            parts.append(f"<b>{k}:</b> {v}")
+        return Paragraph(" ".join(parts), kv_s)
+
+    def _tbl(headers, rows, col_widths=None):
+        data = [[str(c) for c in headers]] + [[str(c) for c in r] for r in rows]
+        cw   = col_widths or [W / len(headers)] * len(headers)
+        t = Table(data, colWidths=cw, repeatRows=1)
         t.setStyle(TableStyle([
-            ("BACKGROUND",  (0, 0), (-1, 0),  BLUE),
-            ("TEXTCOLOR",   (0, 0), (-1, 0),  colors.white),
-            ("FONTNAME",    (0, 0), (-1, 0),  "Helvetica-Bold"),
-            ("FONTNAME",    (0, 1), (-1, -1), "Helvetica"),
-            ("FONTSIZE",    (0, 0), (-1, -1), 8),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#eef4fb")]),
-            ("GRID",        (0, 0), (-1, -1), 0.4, colors.HexColor("#c8ddf0")),
-            ("VALIGN",      (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING",  (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING",(0,0), (-1, -1), 4),
+            ("BACKGROUND",    (0, 0), (-1, 0),  BLUE),
+            ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+            ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
+            ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE",      (0, 0), (-1, -1), 7.5),
+            ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, colors.HexColor("#eef4fb")]),
+            ("GRID",          (0, 0), (-1, -1), 0.3, colors.HexColor("#c8ddf0")),
+            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING",    (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        return t
+
+    def _img2col(key1, key2):
+        if key1 not in charts and key2 not in charts:
+            return None
+        cells = []
+        for key in (key1, key2):
+            if key in charts:
+                cells.append([Image(charts[key], width=W*0.47, height=W*0.32)])
+            else:
+                cells.append([""])
+        t = Table([cells], colWidths=[W*0.5, W*0.5])
+        t.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN",  (0, 0), (-1, -1), "CENTER"),
         ]))
         return t
 
     story = []
 
-    # Title page
-    LOGO_PATH = os.path.join(os.path.dirname(__file__), "logo_dark.png")
+    # ── PAGE 1: Cover ─────────────────────────────────────────────────────────
+    story.append(Spacer(1, 1.0*inch))
     if os.path.exists(LOGO_PATH):
         story.append(Image(LOGO_PATH, width=1.8*inch, height=1.8*inch, kind="proportional"))
-        story.append(Spacer(1, 8))
-    story.append(Paragraph("Sewa Sanskriti App", ParagraphStyle(
-        "appHeading", fontName="Helvetica-Bold", fontSize=16, leading=20,
-        textColor=BLUE, alignment=TA_CENTER, spaceAfter=6,
-    )))
-    story.append(HRFlowable(width=W*0.5, thickness=1, color=BLUE, spaceAfter=10))
+        story.append(Spacer(1, 0.12*inch))
+    story.append(Paragraph("Sewa Sanskriti App", _s("pH", fontSize=18, leading=22,
+                 fontName="Helvetica-Bold", textColor=BLUE, alignment=TA_CENTER)))
+    story.append(Spacer(1, 0.08*inch))
     story.append(Paragraph("Case Study Report", title_s))
-    story.append(Paragraph(scope_line, title_s))
-    story.append(Spacer(1, 6))
+    story.append(Paragraph(scope_line, sub_s))
+    story.append(Spacer(1, 0.12*inch))
     story.append(Paragraph(
-        f"Rashtriya Sewa Bharti (RSB) | ML-Enhanced Analysis<br/>"
-        f"Scope: {ml['scope_level']} | Date: {date.today().strftime('%B %d, %Y')}",
-        sub_s,
+        f"Rashtriya Sewa Bharti (RSB)  |  Scope: {ml['scope_level']}  |  "
+        f"Date: {date.today().strftime('%B %d, %Y')}",
+        meta_s,
     ))
-    story.append(HRFlowable(width=W, thickness=1, color=BLUE, spaceAfter=8))
     story.append(PageBreak())
 
-    # 1. Executive Summary
-    story.append(Paragraph("1. Executive Summary", h1))
-    story.append(Paragraph(
-        f"This report analyses {ml['total_records']:,} RSB projects at the "
-        f"{ml['scope_level'].lower()} level for {scope_line}. "
-        f"The data covers {ml['districts_covered']} district(s) and "
-        f"{ml['villages_covered_unique']} unique village(s). "
-        f"Cumulatively, these projects have reached {ml['ben_total_ever']:,} beneficiaries "
-        f"through {ml['vol_total']:,} volunteers and {ml['sal_total']:,} salaried staff. "
-        f"The dominant service vertical is '{ml['top_vertical']}'.",
-        normal,
-    ))
-    story.append(_tbl_pdf(
-        ["Metric", "Value"],
-        [
-            ("Scope Level", ml["scope_level"]),
-            ("Total Projects", f"{ml['total_records']:,}"),
-            ("Verified / Not Verified", f"{ml['verified']:,} / {ml['not_verified']:,} ({ml['verification_rate']}% verified)"),
-            ("Districts Covered", ml["districts_covered"]),
-            ("Villages Covered", ml["villages_covered_unique"]),
-        ],
-        col_widths=[W*0.5, W*0.5],
-    ))
-    if "verify_chart" in charts:
-        story.append(Image(charts["verify_chart"], width=W*0.45, height=W*0.38))
-        story.append(Paragraph("Figure: Project Verification Status", caption))
-    story.append(Spacer(1, 8))
+    # ── PAGE 2: Overview + qualitative + 2 charts ─────────────────────────────
+    story += _sec_elem("Overview")
+    story.append(_kvrow_elem([
+        ("Projects", f"{ml['total_records']:,}"),
+        ("Verified",  f"{ml['verified']:,} ({ml['verification_rate']}%)"),
+        ("Districts", ml["districts_covered"]),
+        ("Villages",  ml["villages_covered_unique"]),
+    ]))
+    story.append(_kvrow_elem([
+        ("Cumulative Beneficiaries", f"{ml['ben_total_ever']:,}"),
+        ("Volunteers", f"{ml['vol_total']:,}"),
+        ("Salaried",   f"{ml['sal_total']:,}"),
+        ("Families",   f"{ml['families_covered']:,}"),
+    ]))
+    story.append(_kvrow_elem([
+        ("Dominant Vertical",  ml["top_vertical"]),
+        ("Female Share",       f"{ml['female_pct']}%"),
+        ("Matrusansthans",     ml["matrusansthan_count"]),
+    ]))
 
-    # 2. Beneficiary Reach
-    story.append(Paragraph("2. Beneficiary Reach & Demographics", h1))
-    story.append(_tbl_pdf(
-        ["Category", "Current", "Cumulative (Till Date)"],
-        [
-            ("Adult Male",   f"{ml['ben_male_now']:,}",   f"{ml['ben_male_ever']:,}"),
-            ("Adult Female", f"{ml['ben_female_now']:,}", f"{ml['ben_female_ever']:,}"),
-            ("Boys",         f"{ml['ben_boys_now']:,}",   f"{ml['ben_boys_ever']:,}"),
-            ("Girls",        f"{ml['ben_girls_now']:,}",  f"{ml['ben_girls_ever']:,}"),
-            ("TOTAL",        f"{ml['ben_total_now']:,}",  f"{ml['ben_total_ever']:,}"),
-        ],
-    ))
-    story.append(Spacer(1, 4))
-    story.append(Paragraph(f"Female Beneficiary Share (Current): {ml['female_pct']}%", normal))
-    story.append(Paragraph(f"Families Covered: {ml['families_covered']:,}", normal))
-    story.append(Paragraph(f"Villages Covered (reported): {ml['villages_covered']:,}", normal))
-    if "gender_chart" in charts:
-        story.append(Image(charts["gender_chart"], width=W, height=W*0.45))
-        story.append(Paragraph("Figure: Beneficiary Gender Distribution", caption))
-    if "reach_chart" in charts:
-        story.append(Image(charts["reach_chart"], width=W, height=W*0.42))
-        story.append(Paragraph("Figure: Beneficiary Reach — Current vs Cumulative", caption))
-    story.append(Spacer(1, 8))
+    for label in ["Reasons for Opening", "Reported Impact", "Achievements"]:
+        data = ml["text_analysis"].get(label)
+        if not data:
+            continue
+        story += _sec_elem(label)
+        for s in (data.get("samples") or [])[:2]:
+            story.append(Paragraph(f"- {s}", italic))
+        if data["top_themes"]:
+            story.append(_kvrow_elem([("Key themes",
+                ", ".join(kw for kw, _ in data["top_themes"]))]))
 
-    # 3. Human Resources
-    story.append(Paragraph("3. Human Resources", h1))
-    story.append(_tbl_pdf(
+    img2 = _img2col("gender_chart", "vertical_chart")
+    if img2:
+        story.append(Spacer(1, 4))
+        story.append(img2)
+
+    # ── PAGE 3: HR + Reach + Verticals + Operational ──────────────────────────
+    story += _sec_elem("Human Resources")
+    story.append(_tbl(
         ["Category", "Male", "Female", "Total"],
         [
             ("Volunteers",     ml["vol_male"],  ml["vol_female"],  ml["vol_total"]),
             ("Salaried Staff", ml["sal_male"],  ml["sal_female"],  ml["sal_total"]),
-            ("Gram Samiti",    ml["gram_male"], ml["gram_female"], ml["gram_male"] + ml["gram_female"]),
+            ("Gram Samiti",    ml["gram_male"], ml["gram_female"],
+             ml["gram_male"] + ml["gram_female"]),
         ],
     ))
-    if "hr_chart" in charts:
-        story.append(Image(charts["hr_chart"], width=W, height=W*0.42))
-        story.append(Paragraph("Figure: Human Resources — Male vs Female", caption))
-    story.append(Spacer(1, 8))
 
-    # 4. Service Verticals
-    story.append(Paragraph("4. Service Verticals & Sub-Verticals", h1))
-    story.append(Paragraph(
-        f"Projects span {len(ml['verticals'])} vertical(s). Dominant: '{ml['top_vertical']}'.", normal))
-    story.append(_tbl_pdf(["Vertical", "Projects"], list(ml["verticals"].items())))
-    if "vertical_chart" in charts:
-        story.append(Image(charts["vertical_chart"], width=W, height=W*0.45))
-        story.append(Paragraph("Figure: Projects by Vertical", caption))
-    if ml["sub_verticals"]:
-        story.append(Paragraph("Top Sub-Verticals:", bold_s))
-        story.append(_tbl_pdf(["Sub-Vertical", "Count"], list(ml["sub_verticals"].items())))
-        if "subvertical_chart" in charts:
-            story.append(Image(charts["subvertical_chart"], width=W, height=W*0.45))
-            story.append(Paragraph("Figure: Top Sub-Verticals", caption))
-    story.append(Spacer(1, 8))
-
-    # 5. Operational Profile
-    story.append(Paragraph("5. Operational Profile", h1))
-    for label, dist in [
-        ("Operational Frequency", ml["frequency_dist"]),
-        ("Geography Type", ml["geography_dist"]),
-        ("Majority Population Served", ml["population_dist"]),
-        ("Building / Venue Type", ml["building_dist"]),
-    ]:
-        if dist:
-            story.append(Paragraph(f"{label}:", bold_s))
-            story.append(_tbl_pdf([label, "Projects"], list(dist.items())))
-            story.append(Spacer(1, 4))
-    if "geo_chart" in charts:
-        story.append(Image(charts["geo_chart"], width=W*0.5, height=W*0.42))
-        story.append(Paragraph("Figure: Geography Type Distribution", caption))
-    story.append(Paragraph(f"Oldest Programme Year: {ml['oldest_year']}", normal))
-    story.append(Paragraph(f"Newest Programme Year: {ml['newest_year']}", normal))
-    story.append(Paragraph(f"Average Programme Age: {ml['avg_age_yrs']} years", normal))
-    story.append(Paragraph(f"Unique Matrusansthans: {ml['matrusansthan_count']}", normal))
-    story.append(Spacer(1, 8))
-
-    # 6. Qualitative Analysis
-    story.append(Paragraph("6. Qualitative Analysis", h1))
-    for label, data in ml["text_analysis"].items():
-        if data["top_themes"]:
-            themes_str = ", ".join([f"{kw} ({cnt})" for kw, cnt in data["top_themes"]])
-            story.append(Paragraph(f"{label} ({data['filled_count']} records): {themes_str}", normal))
-    story.append(Spacer(1, 8))
-
-    # 7. Project Segmentation
-    story.append(Paragraph("7. Project Segmentation", h1))
-    if ml["segments"]:
-        story.append(_tbl_pdf(
-            ["Segment", "Projects", "Avg Ben.", "Avg Vol.", "Total Reach", "Top Vertical"],
-            [(s["label"], s["count"], round(s["avg_ben"], 0),
-              round(s["avg_vol"], 1), int(s["total_reach"]), s["top_vertical"])
-             for s in ml["segments"]],
-        ))
-    story.append(Spacer(1, 8))
-
-    # 8. Impact Scoring
-    story.append(Paragraph("8. Project Impact Scoring", h1))
-    story.append(Paragraph(
-        "Composite impact score (0-1): Cumulative Reach 50% + Volunteer Strength 30% + Families Covered 20%.",
-        normal))
-    story.append(Paragraph(f"Average Impact Score: {ml['avg_impact_score']}", normal))
-    story.append(Paragraph(f"High-Impact Projects (score > 0.65): {ml['high_impact_count']}", normal))
-    if ml["top_projects"]:
-        story.append(Paragraph("Top 5 Highest-Impact Projects:", bold_s))
-        story.append(_tbl_pdf(
-            ["Project", "Vertical", "District", "Total Reach", "Volunteers", "Score"],
-            [(p["prakalp_name"][:35], p["vertical_name"], p["district_name"],
-              int(p["total_beneficiaries_till_date"]),
-              int(p["total_volunteer"]), round(p["impact_score"], 3))
-             for p in ml["top_projects"]],
-        ))
-    story.append(Spacer(1, 8))
-
-    # 9. Benchmarking
-    story.append(Paragraph("9. Benchmarking", h1))
-    if ml["similar_units"]:
-        col = ml["similar_col"]
-        col_label = col.replace("_name", "").replace("_", " ").title()
-        story.append(_tbl_pdf(
-            [col_label, "Projects", "Avg Beneficiaries", "Similarity"],
-            [(v[col], int(v["total_projects"]), round(v["avg_ben"], 0), round(v["similarity"], 3))
-             for v in ml["similar_units"]],
-        ))
-    story.append(Spacer(1, 8))
-
-    # 10. Photo Gallery
-    if photos:
-        story.append(Paragraph("10. Photo Gallery", h1))
-        story.append(Paragraph("Field photographs from project sites.", normal))
-        for _, photo_caption, tmp_path in photos:
-            try:
-                story.append(Image(tmp_path, width=W*0.75, height=W*0.5))
-                story.append(Paragraph(f"Figure: {photo_caption}", caption))
-                story.append(Spacer(1, 6))
-            except Exception:
-                pass
-        story.append(Spacer(1, 8))
-
-    sec = 11 if photos else 10
-    # Recommendations
-    story.append(Paragraph(f"{sec}. Recommendations", h1))
-    for i, rec in enumerate(_get_recommendations(ml), 1):
-        story.append(Paragraph(f"{i}. {rec}", normal))
-    story.append(Spacer(1, 8))
-
-    # Conclusion
-    story.append(Paragraph(f"{sec + 1}. Conclusion", h1))
-    story.append(Paragraph(
-        f"This {ml['scope_level'].lower()}-level analysis of {scope_line} covers "
-        f"{ml['total_records']:,} RSB projects with a cumulative beneficiary reach of "
-        f"{ml['ben_total_ever']:,}. The '{ml['top_vertical']}' vertical dominates, "
-        f"supported by {ml['vol_total']:,} volunteers. "
-        f"ML analysis identified {ml['high_impact_count']} high-impact projects and "
-        f"{ml['outlier_count']} outliers.",
-        normal,
+    story += _sec_elem("Beneficiary Reach")
+    story.append(_tbl(
+        ["Category", "Current", "Cumulative"],
+        [
+            ("Male",   f"{ml['ben_male_now']:,}",   f"{ml['ben_male_ever']:,}"),
+            ("Female", f"{ml['ben_female_now']:,}", f"{ml['ben_female_ever']:,}"),
+            ("Boys",   f"{ml['ben_boys_now']:,}",   f"{ml['ben_boys_ever']:,}"),
+            ("Girls",  f"{ml['ben_girls_now']:,}",  f"{ml['ben_girls_ever']:,}"),
+            ("TOTAL",  f"{ml['ben_total_now']:,}",  f"{ml['ben_total_ever']:,}"),
+        ],
     ))
+
+    story += _sec_elem("Service Verticals")
+    story.append(_tbl(
+        ["Vertical", "Projects"],
+        [(k, str(v)) for k, v in list(ml["verticals"].items())[:6]],
+        col_widths=[W*0.75, W*0.25],
+    ))
+
+    story += _sec_elem("Operational Highlights")
+    op = []
+    if ml["frequency_dist"]:
+        op.append(("Frequency", max(ml["frequency_dist"], key=ml["frequency_dist"].get)))
+    if ml["geography_dist"]:
+        op.append(("Geography",  max(ml["geography_dist"],  key=ml["geography_dist"].get)))
+    if ml["population_dist"]:
+        op.append(("Population", max(ml["population_dist"], key=ml["population_dist"].get)))
+    op += [("Oldest", str(ml["oldest_year"])), ("Newest", str(ml["newest_year"]))]
+    story.append(_kvrow_elem(op))
+
+    # ── PAGE 4: Impact + Segments + Recommendations + Conclusion ──────────────
+    story += _sec_elem("Top Impact Projects")
+    story.append(_kvrow_elem([
+        ("Avg Score",   ml["avg_impact_score"]),
+        ("High-Impact", ml["high_impact_count"]),
+        ("Outliers",    ml["outlier_count"]),
+    ]))
+    if ml["top_projects"]:
+        story.append(_tbl(
+            ["Project", "Vertical", "Reach", "Score"],
+            [(p["prakalp_name"][:28], p["vertical_name"],
+              str(int(p["total_beneficiaries_till_date"])),
+              str(round(p["impact_score"], 2)))
+             for p in ml["top_projects"][:5]],
+            col_widths=[W*0.40, W*0.28, W*0.17, W*0.15],
+        ))
+
+    if ml["segments"]:
+        story += _sec_elem("Project Segments")
+        story.append(_tbl(
+            ["Segment", "Projects", "Avg Ben.", "Top Vertical"],
+            [(s["label"], str(s["count"]), str(round(s["avg_ben"], 0)), s["top_vertical"])
+             for s in ml["segments"]],
+            col_widths=[W*0.22, W*0.15, W*0.18, W*0.45],
+        ))
+
+    story += _sec_elem("Recommendations")
+    for i, rec in enumerate(_get_recommendations(ml)[:5], 1):
+        story.append(Paragraph(f"{i}.  {rec}", normal))
+
+    story += _sec_elem("Conclusion")
+    conclusion = (
+        f"This {ml['scope_level'].lower()}-level report on {scope_line} covers "
+        f"{ml['total_records']:,} RSB projects reaching {ml['ben_total_ever']:,} cumulative "
+        f"beneficiaries across {ml['villages_covered_unique']} village(s). "
+        f"The '{ml['top_vertical']}' vertical leads, supported by {ml['vol_total']:,} volunteers "
+        f"and {ml['sal_total']:,} salaried staff. "
+        f"{ml['high_impact_count']} high-impact projects were identified. "
+    )
+    for label in ["Reported Impact", "Achievements"]:
+        data = ml["text_analysis"].get(label)
+        if data and data.get("samples"):
+            conclusion += f"{label}: {data['samples'][0]}. "
+    story.append(Paragraph(conclusion, normal))
+
+    # ── PAGE 5: Photos (2×2 grid, max 4) ──────────────────────────────────────
+    if photos:
+        story.append(PageBreak())
+        story += _sec_elem("Photo Gallery")
+        story.append(Paragraph("Field photographs from project sites.", normal))
+        for row_start in range(0, min(len(photos), 4), 2):
+            pair = photos[row_start:row_start + 2]
+            cells = []
+            for _, cap, tmp_path in pair:
+                try:
+                    cells.append([
+                        Image(tmp_path, width=W*0.46, height=W*0.32),
+                        Paragraph(_clean(cap), cap_s),
+                    ])
+                except Exception:
+                    cells.append([""])
+            while len(cells) < 2:
+                cells.append([""])
+            pt = Table([cells], colWidths=[W*0.5, W*0.5])
+            pt.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ALIGN",  (0, 0), (-1, -1), "CENTER"),
+            ]))
+            story.append(pt)
+            story.append(Spacer(1, 6))
 
     doc.build(story)
     return tmp.name
-
 
 def _get_recommendations(ml: dict) -> list:
     recs = []
