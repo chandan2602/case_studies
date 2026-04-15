@@ -1,0 +1,88 @@
+<div class="wrapper">
+  <div class="card">
+
+    <div class="brand">
+      <div class="brand-icon">&#9788;</div>
+      <div>
+        <h1>Sewa Sanskriti App</h1>
+        <p class="subtitle">Rashtriya Sewa Bharti — ML-Enhanced Report</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="hint">
+      Select State to generate a state-level report, or narrow down to District / Village.
+    </p>
+
+    <form (ngSubmit)="onSubmit()">
+
+      <!-- State -->
+      <div class="form-group">
+        <label>State <span class="required">*</span></label>
+        <div class="select-wrap">
+          <select [(ngModel)]="selectedState" name="state" (change)="onStateChange()" required>
+            <option value="">— Select State —</option>
+            <option *ngFor="let s of states" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- District -->
+      <div class="form-group">
+        <label>District <span class="optional">(optional)</span></label>
+        <div class="select-wrap">
+          <select [(ngModel)]="selectedDistrict" name="district"
+                  (change)="onDistrictChange()" [disabled]="!districts.length">
+            <option value="">— All Districts —</option>
+            <option *ngFor="let d of districts" [value]="d">{{ d }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Village -->
+      <div class="form-group">
+        <label>Village / Area <span class="optional">(optional)</span></label>
+        <div class="select-wrap">
+          <select [(ngModel)]="selectedVillage" name="village" [disabled]="!villages.length">
+            <option value="">— All Villages —</option>
+            <option *ngFor="let v of villages" [value]="v">{{ v }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Format -->
+      <div class="form-group">
+        <label>Download Format</label>
+        <div class="select-wrap">
+          <select [(ngModel)]="selectedFormat" name="format">
+            <option value="docx">Word Document (.docx)</option>
+            <option value="pdf">PDF (.pdf)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Scope badge -->
+      <div class="scope-badge" *ngIf="scopeLabel">
+        Report scope: <strong>{{ scopeLabel }}</strong>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" [disabled]="!selectedState || loading">
+        <span *ngIf="!loading">&#8681; Generate &amp; Download Report</span>
+        <span *ngIf="loading">&#9696; Generating report…</span>
+      </button>
+
+    </form>
+
+    <!-- Error -->
+    <div class="error" *ngIf="error">{{ error }}</div>
+
+    <div class="info-strip">
+      <span>&#128202; 1.6L+ Records</span>
+      <span>&#128205; 34 States &bull; 647 Districts</span>
+      <span>&#129302; ML-Powered</span>
+    </div>
+
+  </div>
+</div>
